@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		810D8FB61CCB58D600195B6C /* Shared Code.swift in Sources */ = {isa = PBXBuildFile; fileRef = 810D8FB51CCB58D600195B6C /* Shared Code.swift */; };
 		815E098B1CCA2A110062AAC5 /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 815E098A1CCA2A110062AAC5 /* String.swift */; };
 		8174DB8C1CC967F30078AB04 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8174DB8B1CC967F30078AB04 /* AppDelegate.swift */; };
 		8174DB8E1CC967F30078AB04 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8174DB8D1CC967F30078AB04 /* ViewController.swift */; };
@@ -24,6 +25,7 @@
 
 /* Begin PBXFileReference section */
 		2DCB802CF93EFC7EEC60E27D /* Pods-Developex Test.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Developex Test.release.xcconfig"; path = "Pods/Target Support Files/Pods-Developex Test/Pods-Developex Test.release.xcconfig"; sourceTree = "<group>"; };
+		810D8FB51CCB58D600195B6C /* Shared Code.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Shared Code.swift"; sourceTree = "<group>"; };
 		815E098A1CCA2A110062AAC5 /* String.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = String.swift; sourceTree = "<group>"; };
 		8174DB881CC967F30078AB04 /* Developex Test.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Developex Test.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8174DB8B1CC967F30078AB04 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -85,8 +87,8 @@
 				8174DBA11CC9705A0078AB04 /* CrawlDelegate.swift */,
 				8174DB9F1CC96C5F0078AB04 /* CrawlManager.swift */,
 				8174DBA31CC97B500078AB04 /* Occurrence.swift */,
-				81B25F431CCA6F7A0010328E /* Extensions */,
 				81B25F411CCA5F500010328E /* SynchronizedQueue.swift */,
+				81B25F431CCA6F7A0010328E /* Extensions */,
 			);
 			path = "Developex Test";
 			sourceTree = "<group>";
@@ -96,6 +98,7 @@
 			children = (
 				815E098A1CCA2A110062AAC5 /* String.swift */,
 				81B25F441CCA6F8F0010328E /* Array.swift */,
+				810D8FB51CCB58D600195B6C /* Shared Code.swift */,
 			);
 			name = Extensions;
 			sourceTree = "<group>";
@@ -241,6 +244,7 @@
 			files = (
 				81B25F451CCA6F8F0010328E /* Array.swift in Sources */,
 				8174DBA21CC9705A0078AB04 /* CrawlDelegate.swift in Sources */,
+				810D8FB61CCB58D600195B6C /* Shared Code.swift in Sources */,
 				8174DB9E1CC96B7B0078AB04 /* Settings.swift in Sources */,
 				8174DBA01CC96C5F0078AB04 /* CrawlManager.swift in Sources */,
 				8174DB8E1CC967F30078AB04 /* ViewController.swift in Sources */,

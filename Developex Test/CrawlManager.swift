@@ -21,7 +21,7 @@ public class CrawlManager {
     private var stopped: Bool = false
     private var suspended: Bool = false
     
-    private var notFinishedResults: Bool {
+    private var finishedResults: Bool {
         var result = false
         dispatch_sync(barrierQueue) {
             result = self.results.notFinished
@@ -70,7 +70,7 @@ public class CrawlManager {
     func start(url: String) {
         addURL(url)
         
-        while !stopped && !suspended && notFinishedResults && resultsCount <= Settings.maxURLNumber {
+        while finishedResults && resultsCount <= Settings.maxURLNumber {
             
             guard let occurance = pendingURLs.pop() else { continue }
             guard let url = NSURL(string: occurance.url) else { continue }
