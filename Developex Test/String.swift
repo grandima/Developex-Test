@@ -12,7 +12,7 @@ import UIKit
 
 extension String {
     
-    internal func occurences(subString: String) -> Int {
+    internal func occurences(ofSubString subString: String) -> Int {
         guard let regex = try? NSRegularExpression(pattern: subString, options: []) else { return 0 }
         let ranges = regex.matchesInString(self, options: [], range: NSMakeRange(0, self.characters.count)).map {$0.range}
         return ranges.count
@@ -33,7 +33,6 @@ extension String {
         detector.enumerateMatchesInString(self, options: .ReportCompletion, range: NSMakeRange(0, self.characters.count)) { (result, flags, false) in
             
             guard let url = result?.URL else { return }
-            print(url.absoluteString)
             if url.scheme == "http" {
                 guard let components = NSURLComponents(string: url.absoluteString) else { return }
                 components.scheme = "https"

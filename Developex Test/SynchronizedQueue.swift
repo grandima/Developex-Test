@@ -26,4 +26,10 @@ public class SynchronizedQueue<T> {
         }
         return element
     }
+    public func clear() {
+        dispatch_sync(self.accessQueue) { 
+            self.queue = []
+        }
+    }
+    
 }

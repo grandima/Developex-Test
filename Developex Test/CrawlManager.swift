@@ -7,23 +7,41 @@
 //
 
 import Foundation
-import Alamofire
 //enum URLCrawlState {
 //    case Downloading, Found(Int), NotFound, Error
 //}
 
 public class CrawlManager {
+    //MARK: - Private
     
-    private var barrierQueue = dispatch_queue_create("grandima.Developex-Test.CrawlManager", DISPATCH_QUEUE_CONCURRENT)
-    private var pendingURLs = SynchronizedQueue<Occurrence>()
-    private var results = [Occurrence]()
+    private var privateQueue = dispatch_queue_create("grandima.Developex-Test.CrawlManager.Private", DISPATCH_QUEUE_CONCURRENT)
     
-    private var stopped: Bool = false
+    public var pendingURLs = SynchronizedQueue<Occurrence>()
+    public var results = SynchronizedResults<Occurrence>()
+    
+    private var _stopped = false
+    public var stopped: Bool {
+        get {
+            var value: Bool!
+            synchronizedOnMain {
+                value = self._stopped
+            }
+            return value
+        }
+        set (newValue) {
+            synchronizedOnMain {
+                self._stopped = newValue
+            }
+        }
+    }
+    
     private var suspended: Bool = false
+    
+    private var operationQueue: NSOperationQueue!
     
     private var finishedResults: Bool {
         var result = false
-        dispatch_sync(barrierQueue) {
+        synchronizedOnMain {
             result = self.results.notFinished
         }
         return result
@@ -31,23 +49,18 @@ public class CrawlManager {
     
     private var resultsCount: Int {
         var count = 0
-        dispatch_sync(barrierQueue) {
+        synchronizedOnMain {
             count = self.results.count
         }
         return count
     }
+
+
     
     public func addURL(url: String) {
-        dispatch_barrier_sync(barrierQueue) {
-            if self.results.count < Settings.maxURLNumber {
-                var occured = false
-                for item in self.results {
-                    if item.url == url {
-                        occured = true
-                        break
-                    }
-                }
-                if !occured {
+        synchronizedOnMain {
+            if self.results.count < Settings.maxURLNumber && !self._stopped {
+                if !self.results.occures(url) {
                     let occurance = Occurrence(url: url)
                     self.pendingURLs.push(occurance)
                     self.results.append(occurance)
@@ -58,48 +71,69 @@ public class CrawlManager {
     
     public static let sharedManager = CrawlManager()
     
-    lazy var session: NSURLSession = {
-        let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
-        var queue = NSOperationQueue()
-        queue.name = "Crawl Queue"
-        queue.maxConcurrentOperationCount = Settings.maxURLNumber
-        let session = NSURLSession(configuration: configuration, delegate: nil, delegateQueue: queue)
-        return session
-    }()
+
     
     func start(url: String) {
-        addURL(url)
-        
-        while finishedResults && resultsCount <= Settings.maxURLNumber {
+    
+        dispatch_async(privateQueue) {[unowned self] in
+            self.configure()
+            self.addURL(url)
             
-            guard let occurance = pendingURLs.pop() else { continue }
-            guard let url = NSURL(string: occurance.url) else { continue }
+            let queue = self.operationQueue
+            while !self.stopped && self.finishedResults && self.resultsCount <= Settings.maxURLNumber {
             
-            session.dataTaskWithURL(url, completionHandler: { [unowned occurance](data, response, error) in
-                if let data = data where error == nil {
-                    
-                    guard let text = String(data: data, encoding: NSUTF8StringEncoding) else {
-                        occurance.crawlStatus = .Error
-                        return
-                    }
-                    
-                    let links = text.links
-                    links.forEach{ self.addURL($0) }
-                    
-                    let occurenceCount = text.occurences(Settings.textToFind)
-                    if occurenceCount > 0 {
-                        occurance.count = occurenceCount
-                        occurance.crawlStatus = .Finished
-                    } else {
-                        occurance.crawlStatus = .NotFound
-                    }
-                } else {
-                    occurance.crawlStatus = .Error
-                }
-                }).resume()
+                guard let occurance = self.pendingURLs.pop() else { continue }
+
+                let operation = CrawlOperation(occurrence: occurance, networkOperationCompletionHandler: self.completionHandler)
+                queue.addOperation(operation)
+                
+            }
         }
     }
     
+    func configure() {
+        operationQueue = NSOperationQueue()
+        operationQueue.maxConcurrentOperationCount = Settings.maxConcurrentOperationCount
+        
+        stopped = false
+        
+    }
+    
+    func stop() {
+        stopped = true
+        operationQueue.cancelAllOperations()
+        pendingURLs.clear()
+        results.clear()
+    }
+    
+    func completionHandler(occurrence: Occurrence, data: NSData?, error: NSError?) {
+        
+        guard let data = data where error == nil else {
+            occurrence.crawlStatus = .Error
+            return
+        }
+        
+        if let text = String(data: data, encoding: NSUTF8StringEncoding) {
+            
+            let links = text.links
+            links.forEach{ self.addURL($0) }
+            
+            //TODO: - Tell about a problem
+            let withoutHTML = text.withoutHTML
+            let occurrenceCount = withoutHTML.occurences(ofSubString: Settings.textToFind)
+            
+            if occurrenceCount > 0 {
+                occurrence.count = occurrenceCount
+                occurrence.crawlStatus = .Finished
+            } else {
+                occurrence.crawlStatus = .NotFound
+            }
+
+        }
+        else {
+            occurrence.crawlStatus = .Error
+        }
+    }
     
     //    private func setCount(item: Occurrence, count: Int) {
     //        dispatch_barrier_sync(barrierQueue) {

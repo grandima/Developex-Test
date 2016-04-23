@@ -10,7 +10,7 @@ import Foundation
 
 
 func synchronizedOnMain(closure: () -> ()) {
-    if NSOperationQueue.mainQueue() == NSOperationQueue.currentQueue() {
+    if NSThread.isMainThread() {
         closure()
     } else {
         dispatch_sync(dispatch_get_main_queue()) {
