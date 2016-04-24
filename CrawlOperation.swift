@@ -24,7 +24,7 @@ class CrawlOperation : ConcurrentOperation {
     
     // define init method that captures all of the properties to be used when issuing the request
     
-    init(occurrence: Occurrence, networkOperationCompletionHandler: (occurrence: Occurrence, responseObject: NSData?, error: NSError?) -> ()) {
+    init(occurrence: Occurrence) {
         self.occurrence = occurrence
 
         url = NSURL(string: occurrence.url) ?? NSURL()
@@ -39,32 +39,21 @@ class CrawlOperation : ConcurrentOperation {
                 occurrence?.crawlStatus = .Error
                 return
             }
-            if self.cancelled {
-                self.completeOperation()
-            }
+            self.forceCancel()
             
             if let text = String(data: data, encoding: NSUTF8StringEncoding) {
-                if self.cancelled {
-                    self.completeOperation()
-                    return
-                }
+                self.forceCancel()
                 let links = text.links
-                if self.cancelled {
-                    self.completeOperation()
-                    return
-                }
+                
                 links.forEach{ CrawlManager.sharedManager.addURL($0) }
                 if self.cancelled {
                     self.completeOperation()
                     return
                 }
                 //TODO: - Tell about a problem
-                let withoutHTML = text.withoutHTML
+                let withoutHTML = text//.withoutHTML
                 let occurrenceCount = withoutHTML.occurences(ofSubString: Settings.textToFind)
-                if self.cancelled {
-                    self.completeOperation()
-                    return
-                }
+                self.forceCancel()
                 if occurrenceCount > 0 {
                     occurrence?.count = occurrenceCount
                     occurrence?.crawlStatus = .Finished
@@ -84,6 +73,13 @@ class CrawlOperation : ConcurrentOperation {
         task = dataTask
         task?.resume()
         
+    }
+    
+    func forceCancel() {
+        if self.cancelled {
+            self.completeOperation()
+            return
+        }
     }
     
     

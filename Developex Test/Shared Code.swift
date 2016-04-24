@@ -18,3 +18,11 @@ func synchronizedOnMain(closure: () -> ()) {
         }
     }
 }
+
+let barrierQueue = dispatch_queue_create("grandima.Developex-Test.CrawlManager.BarrierQueue", DISPATCH_QUEUE_CONCURRENT)
+
+func synchronizedBarrier(closure: () -> ()) {
+    dispatch_sync(barrierQueue) {
+        closure()
+    }
+}
