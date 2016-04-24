@@ -117,13 +117,12 @@
 			children = (
 				810D8FC21CCBC54500195B6C /* Controller */,
 				810D8FBF1CCBC52E00195B6C /* Model */,
+				810D8FC11CCBC54100195B6C /* View */,
 				8174DB9F1CC96C5F0078AB04 /* CrawlManager.swift */,
 				810D8FBD1CCBBD9200195B6C /* CrawlOperation.swift */,
 				8174DB9D1CC96B7B0078AB04 /* Settings.swift */,
 				810D8FB91CCB7FEA00195B6C /* SynchronizedResults.swift */,
-				81B25F411CCA5F500010328E /* SynchronizedQueue.swift */,
 				81B25F431CCA6F7A0010328E /* Extensions */,
-				810D8FC11CCBC54100195B6C /* View */,
 				810D8FC31CCBC55000195B6C /* Others */,
 				8174DB8B1CC967F30078AB04 /* AppDelegate.swift */,
 				8174DB8F1CC967F30078AB04 /* Main.storyboard */,
@@ -134,6 +133,7 @@
 		81B25F431CCA6F7A0010328E /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				81B25F411CCA5F500010328E /* SynchronizedQueue.swift */,
 				810D8FBB1CCBBD3D00195B6C /* ConcurrentOperation.swift */,
 				815E098A1CCA2A110062AAC5 /* String.swift */,
 				81B25F441CCA6F8F0010328E /* Array.swift */,

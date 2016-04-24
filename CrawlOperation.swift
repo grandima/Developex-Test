@@ -7,9 +7,10 @@
 //
 
 import Foundation
+
+//Operation for downloading and parsing URL and its content
 class CrawlOperation : ConcurrentOperation {
-    
-    
+
     init(occurrence: Occurrence) {
         self.occurrence = occurrence
         self.occurrence?.crawlStatus = .InProcess(ProgressEnum.Pending)

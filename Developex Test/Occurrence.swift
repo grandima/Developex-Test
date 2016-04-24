@@ -8,7 +8,7 @@
 
 import Foundation
 
-
+//Keeps URL and its status (see `StatusEnums.swift`)
 public class Occurrence {
     
     public static let updateNotification = "OccurrenceUpdate"

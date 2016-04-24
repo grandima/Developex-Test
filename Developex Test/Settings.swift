@@ -78,6 +78,8 @@ class Settings {
         }
     }
     
+    //MARK: - Private
+    
     private var _startURL: String
     private var _maxConcurrentOperationCount: Int
     private var _textToFind: String

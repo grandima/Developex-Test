@@ -49,6 +49,7 @@ public class SynchronizedQueue<T: Equatable> {
         }
         return element
     }
+    
     public func remove(elementToRemove: T) {
         dispatch_sync(self.accessQueue) {
             var index: Int?
@@ -61,8 +62,8 @@ public class SynchronizedQueue<T: Equatable> {
                 self.queue.removeAtIndex(index!)
             }
         }
-        
     }
+    
     public func removeAll() {
         dispatch_sync(self.accessQueue) { 
             self.queue = []

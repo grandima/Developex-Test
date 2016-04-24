@@ -7,9 +7,8 @@
 //
 
 import Foundation
-//enum URLCrawlState {
-//    case Downloading, Found(Int), NotFound, Error
-//}
+
+//MARK: -
 
 public class CrawlManager {
 
@@ -20,7 +19,10 @@ public class CrawlManager {
     
     public static let sharedManager = CrawlManager()
     
+    //Queue for BFS url parsing
     public var pendingURLs = SynchronizedQueue<Occurrence>()
+    
+    //Array with all URLs
     public var results = SynchronizedResults<Occurrence>()
 
     public var stopped: Bool {
@@ -52,6 +54,7 @@ public class CrawlManager {
         }
     }
 
+    //Adds URL to results and `pendingURLs` queue
     public func addURL(url: String) {
         synchronizedOnMain {
             if (self.results.count < Settings.sharedSettings.maxURLNumber) && ((!self._stopped && self._paused) || (self._stopped == false && self._paused == false)){
@@ -65,9 +68,8 @@ public class CrawlManager {
     }
     
     public func start(url: String) {
-        self.stopped = true
-        self.operationQueue?.cancelAllOperations()
-        self.operationQueue?.waitUntilAllOperationsAreFinished()
+        self.prepareForSuspend()
+        
         self.pendingURLs.removeAll()
         self.results.removeAll()
         
@@ -95,9 +97,7 @@ public class CrawlManager {
             synchronizedOnMain({
                 NSNotificationCenter.defaultCenter().postNotificationName(self.dynamicType.statusNotification, object: nil, userInfo: ["status": "Pausing"])
             })
-            self.paused = true
-            self.operationQueue?.cancelAllOperations()
-            self.operationQueue?.waitUntilAllOperationsAreFinished()
+            self.prepareForSuspend()
             synchronizedOnMain({
                 NSNotificationCenter.defaultCenter().postNotificationName(self.dynamicType.statusNotification, object: nil, userInfo: ["status": "Paused"])
             })
@@ -137,6 +137,12 @@ public class CrawlManager {
         operationQueue?.maxConcurrentOperationCount = Settings.sharedSettings.maxConcurrentOperationCount
         stopped = false
         
+    }
+    
+    private func prepareForSuspend() {
+        self.paused = true
+        self.operationQueue?.cancelAllOperations()
+        self.operationQueue?.waitUntilAllOperationsAreFinished()
     }
     
     

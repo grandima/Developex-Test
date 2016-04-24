@@ -9,9 +9,9 @@
 import Foundation
 
 
-//
+//This class keeps all found URLs
 public class SynchronizedResults<T: Occurrence> {
-    private var _results = [T]()
+    
     
     init() {
         synchronizedOnMain {
@@ -100,6 +100,7 @@ public class SynchronizedResults<T: Occurrence> {
     
     //MARK: - Private
     
+    private var _results = [T]()
     private var _count: Int = 0
     private var _crawlStatus: Status = .InProcess(ProgressEnum.Pending)
     
