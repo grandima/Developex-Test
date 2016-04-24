@@ -12,18 +12,17 @@ import Foundation
 //}
 
 public class CrawlManager {
-    //MARK: - Private
-    private var privateQueue = dispatch_queue_create("grandima.Developex-Test.CrawlManager.Private", DISPATCH_QUEUE_CONCURRENT)
-    public var pendingURLs = SynchronizedQueue<Occurrence>()
-    public var results = SynchronizedResults<Occurrence>()
-    private var _stopped = false
-    private var suspended: Bool = false
-    private var operationQueue: NSOperationQueue!
-    
+
     //MARK: - Public
+    
+    public static let progressChangedNotification = "ProgressChanged"
+    public static let statusNotification = "StatusNotification"
     
     public static let sharedManager = CrawlManager()
     
+    public var pendingURLs = SynchronizedQueue<Occurrence>()
+    public var results = SynchronizedResults<Occurrence>()
+
     public var stopped: Bool {
         get {
             var value: Bool!
@@ -38,94 +37,108 @@ public class CrawlManager {
             }
         }
     }
+    public var paused: Bool {
+        get {
+            var value: Bool!
+            synchronizedOnMain {
+                value = self._paused
+            }
+            return value
+        }
+        set (newValue) {
+            synchronizedOnMain {
+                self._paused = newValue
+            }
+        }
+    }
 
-    
     public func addURL(url: String) {
         synchronizedOnMain {
-            if self.results.count < Settings.maxURLNumber && !self._stopped {
+            if (self.results.count < Settings.sharedSettings.maxURLNumber) && ((!self._stopped && self._paused) || (self._stopped == false && self._paused == false)){
                 if !self.results.occures(url) {
-                    let occurance = Occurrence(url: url)
-                    self.pendingURLs.push(occurance)
-                    self.results.append(occurance)
+                    let occurrence = Occurrence(url: url)
+                    self.pendingURLs.push(occurrence)
+                    self.results.append(occurrence)
                 }
             }
         }
     }
     
+    public func start(url: String) {
+        self.stopped = true
+        self.operationQueue?.cancelAllOperations()
+        self.operationQueue?.waitUntilAllOperationsAreFinished()
+        self.pendingURLs.removeAll()
+        self.results.removeAll()
+        
+        self.configure()
+        self.addURL(url)
+        self.resume()
+    }
     
-    
-    func start(url: String) {
-    
+    public func resume() {
         dispatch_async(privateQueue) {[unowned self] in
-            self.configure()
-            self.addURL(url)
-            
-            let queue = self.operationQueue
-            while !self.stopped && self.results.notFinished && self.results.count <= Settings.maxURLNumber {
-            
-                guard let occurance = self.pendingURLs.pop() else { continue }
-
-                let operation = CrawlOperation(occurrence: occurance)
-                queue.addOperation(operation)
-                
+            self.stopped = false
+            self.paused = false
+            while !self.stopped && !self.paused && self.results.notFinished && self.results.count <= Settings.sharedSettings.maxURLNumber {
+                guard let occurrence = self.pendingURLs.postponedPop({ (occ: Occurrence) -> Bool in
+                    return occ.crawlStatus == .Added
+                }) else { continue }
+                let operation = CrawlOperation(occurrence: occurrence)
+                self.operationQueue?.addOperation(operation)
             }
         }
     }
     
-    func configure() {
-        operationQueue = NSOperationQueue()
-        operationQueue.maxConcurrentOperationCount = Settings.maxConcurrentOperationCount
+    public func pause() {
+        dispatch_async(privateQueue) {[unowned self] in
+            synchronizedOnMain({
+                NSNotificationCenter.defaultCenter().postNotificationName(self.dynamicType.statusNotification, object: nil, userInfo: ["status": "Pausing"])
+            })
+            self.paused = true
+            self.operationQueue?.cancelAllOperations()
+            self.operationQueue?.waitUntilAllOperationsAreFinished()
+            synchronizedOnMain({
+                NSNotificationCenter.defaultCenter().postNotificationName(self.dynamicType.statusNotification, object: nil, userInfo: ["status": "Paused"])
+            })
+            self.results.markResults(withStatus: .Added)
+        }
+    }
+    
+    public func stop() {
+        dispatch_async(privateQueue) {[unowned self] in
+            synchronizedOnMain({
+                NSNotificationCenter.defaultCenter().postNotificationName(self.dynamicType.statusNotification, object: nil, userInfo: ["status": "Stoping"])
+            })
+            
+            self.stopped = true
+            self.operationQueue?.cancelAllOperations()
+            self.operationQueue?.waitUntilAllOperationsAreFinished()
+            synchronizedOnMain({
+                NSNotificationCenter.defaultCenter().postNotificationName(self.dynamicType.statusNotification, object: nil, userInfo: ["status": "Stopped"])
+            })
+            
+            self.pendingURLs.removeAll()
+            self.results.removeAll()
+        }
         
+    }
+    
+    //MARK: - Private
+    
+    private var privateQueue = dispatch_queue_create("grandima.Developex-Test.CrawlManager.Private", DISPATCH_QUEUE_CONCURRENT)
+    
+    private var _stopped = false
+    private var _paused = false
+    private var operationQueue: NSOperationQueue?
+    
+    private func configure() {
+        operationQueue = NSOperationQueue()
+        operationQueue?.maxConcurrentOperationCount = Settings.sharedSettings.maxConcurrentOperationCount
         stopped = false
         
     }
     
-    func stop() {
-        stopped = true
-        operationQueue.cancelAllOperations()
-        pendingURLs.clear()
-        results.clear()
-    }
-    
-//    func completionHandler(occurrence: Occurrence, data: NSData?, error: NSError?) {
-//        
-//        guard let data = data where error == nil else {
-//            occurrence.crawlStatus = .Error
-//            return
-//        }
-//        
-//        if let text = String(data: data, encoding: NSUTF8StringEncoding) {
-//            
-//            let links = text.links
-//            links.forEach{ self.addURL($0) }
-//            
-//            //TODO: - Tell about a problem
-//            let withoutHTML = text.withoutHTML
-//            let occurrenceCount = withoutHTML.occurences(ofSubString: Settings.textToFind)
-//            
-//            if occurrenceCount > 0 {
-//                occurrence.count = occurrenceCount
-//                occurrence.crawlStatus = .Finished
-//            } else {
-//                occurrence.crawlStatus = .NotFound
-//            }
-//
-//        }
-//        else {
-//            occurrence.crawlStatus = .Error
-//        }
-//    }
-    
-    //    private func setCount(item: Occurrence, count: Int) {
-    //        dispatch_barrier_sync(barrierQueue) {
-    //            item.count = count
-    //            item.crawlStatus = .Finished
-    //        }
-    //    }
-    
-    
-    
-    // MARK: - Private
     
     
 }

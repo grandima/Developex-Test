@@ -11,7 +11,7 @@ import Foundation
 extension SequenceType where Generator.Element == Occurrence {
     internal var notFinished: Bool {
         for e in self {
-            if e.crawlStatus == .Downloading {
+            if e.crawlStatus == .InProcess(ProgressEnum.Pending) {
                 return true
             }
         }

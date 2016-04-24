@@ -8,15 +8,37 @@
 
 import Foundation
 
+
+//
 public class SynchronizedResults<T: Occurrence> {
     private var _results = [T]()
     
     init() {
         synchronizedOnMain {
             self._results = []
-            //NSNotificationCenter.defaultCenter().postNotificationName("OccuranceUpdate", object: nil)
         }
     }
+    
+    func markResults(withStatus status: Status) {
+        synchronizedOnMain {
+            (self._results.filter{$0.crawlStatus != .Finished(FinishEnum.NotFound)}).forEach{$0.crawlStatus = status}
+        }
+    }
+    
+    func append(t: T) {
+        synchronizedOnMain {
+            self._results.append(t)
+            NSNotificationCenter.defaultCenter().postNotificationName(Occurrence.updateNotification, object: nil)
+        }
+    }
+    
+    func removeAll() {
+        synchronizedOnMain {
+            self._results = []
+            NSNotificationCenter.defaultCenter().postNotificationName(Occurrence.updateNotification, object: nil)
+        }
+    }
+    
     subscript (i: Int) -> T{
         get {
             var result: T!
@@ -28,10 +50,11 @@ public class SynchronizedResults<T: Occurrence> {
         set(newValue) {
             synchronizedOnMain {
                 self._results[i] = newValue
-                NSNotificationCenter.defaultCenter().postNotificationName("OccuranceUpdate", object: nil)
+                NSNotificationCenter.defaultCenter().postNotificationName(Occurrence.updateNotification, object: nil)
             }
         }
     }
+    
     func occures(url: String) -> Bool {
         var occured = false
         synchronizedOnMain {
@@ -42,22 +65,7 @@ public class SynchronizedResults<T: Occurrence> {
                 }
             }
         }
-            return occured
-    }
-    
-    
-    func append(t: T) {
-        synchronizedOnMain {
-            self._results.append(t)
-            NSNotificationCenter.defaultCenter().postNotificationName("OccuranceUpdate", object: nil)
-        }
-    }
-    
-    func clear() {
-        synchronizedOnMain {
-            self._results = []
-            NSNotificationCenter.defaultCenter().postNotificationName("OccuranceUpdate", object: nil)
-        }
+        return occured
     }
     
     var count: Int {
@@ -67,20 +75,32 @@ public class SynchronizedResults<T: Occurrence> {
         }
         return result
     }
+    func countForStatus(forStatus status: Status) -> Int {
+        var result: Int!
+        synchronizedOnMain {
+            result = (self._results.filter{$0.crawlStatus == status}).count
+        }
+        return result
+    }
     
     var notFinished: Bool {
         var result = false
         synchronizedOnMain {
             for e in self._results {
-                if e.crawlStatus == .Downloading {
+                if e.crawlStatus == .InProcess(ProgressEnum.Downloading) ||  e.crawlStatus == .Added {
                     result = true
                 }
             }
             if !result {
-                NSNotificationCenter.defaultCenter().postNotificationName("Finished", object: nil)
+                NSNotificationCenter.defaultCenter().postNotificationName(CrawlManager.statusNotification, object: nil, userInfo: ["status": "Finished"])
             }
         }
         return result
-        
     }
+    
+    //MARK: - Private
+    
+    private var _count: Int = 0
+    private var _crawlStatus: Status = .InProcess(ProgressEnum.Pending)
+    
 }

@@ -8,28 +8,13 @@
 
 import Foundation
 
-public enum CrawlStatus {
-    case Downloading
-    case NotFound
-    case Error 
-    case Finished
-
-}
-
-let pendingKey = "Pending"
-let downloadingKey = "Downloading"
-let processingKey = "Processing"
-
 
 public class Occurrence {
     
-    private static let barrierQueue = dispatch_get_main_queue()
+    public static let updateNotification = "OccurrenceUpdate"
     
-    private var _count: Int = 0
-    private var _crawlStatus: CrawlStatus = .Downloading
+    public let url: String
     
-    
-    let url: String
     public var count: Int {
         get {
             var result: Int!
@@ -41,13 +26,13 @@ public class Occurrence {
         set (newValue){
             synchronizedOnMain {
                 self._count = newValue
-                NSNotificationCenter.defaultCenter().postNotificationName("OccuranceUpdate", object: nil)
+                NSNotificationCenter.defaultCenter().postNotificationName(self.dynamicType.updateNotification, object: nil)
             }
         }
     }
-    public var crawlStatus: CrawlStatus  {
+    public var crawlStatus: Status  {
         get {
-            var result: CrawlStatus!
+            var result: Status!
             synchronizedOnMain {
                 result = self._crawlStatus
             }
@@ -56,18 +41,33 @@ public class Occurrence {
         set (newValue){
             synchronizedOnMain {
                 self._crawlStatus = newValue
-                NSNotificationCenter.defaultCenter().postNotificationName("OccuranceUpdate", object: nil)
+                NSNotificationCenter.defaultCenter().postNotificationName(Occurrence.updateNotification, object: nil)
             }
         }
     }
-    
     init(url: String) {
         self.url = url
-        crawlStatus = .Downloading
+        _crawlStatus = .Added
     }
+    
     deinit {
         print("Occurrence deinit")
     }
+    
+    //MARK: - Privage
+    
+    private var _count: Int = 0
+    private var _crawlStatus: Status = .InProcess(ProgressEnum.Pending)
+}
+
+extension Occurrence: Equatable {}
+
+public func ==(lhs: Occurrence, rhs: Occurrence) -> Bool {
+    var result: Bool!
+    synchronizedOnMain {
+        result = lhs.url == rhs.url
+    }
+    return result
 }
 
 protocol ViewRepresentable: class {
@@ -80,11 +80,6 @@ extension Occurrence: ViewRepresentable {
         return self.url
     }
     var statusRepresentable: String {
-        switch crawlStatus {
-        case .Downloading: return "Downloading"
-        case .Finished: return "Finished with: " + String(self.count)
-        case .NotFound: return "Not found"
-        case .Error: return "Error"
-        }
+            return crawlStatus.description
     }
 }
